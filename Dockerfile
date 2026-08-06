@@ -1,6 +1,5 @@
 # Stage 1: Build dependencies and compile frontend design assets
 FROM php:8.3-fpm-alpine AS builder
-
 WORKDIR /var/www/html
 
 # Install system utilities, graphic libraries, and Node.js for compiling assets
@@ -31,10 +30,8 @@ RUN php artisan vendor:publish --provider="Statamic\Eloquent\ServiceProvider" --
 # Complete final composer optimization dump
 RUN composer dump-autoload --no-dev --optimize
 
-
 # Stage 2: Main Production Web Runtime Engine (Official PHP Apache Image)
 FROM php:8.3-apache
-
 WORKDIR /var/www/html
 
 # Install system dependencies, PostgreSQL support, and layout engines
@@ -60,11 +57,11 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# FAIL-SAFE RUN: Uses low-level DB facade to verify presence and seeds the user via Statamic handlers safely
+# FAIL-SAFE RUN: won't let a broken admin-seed step take the whole container down
 CMD php artisan config:clear && \
     php artisan cache:clear && \
     php artisan migrate --force && \
-    php artisan tinker --execute="if(\DB::table('users')->where('email', 'admin@example.com')->count() === 0) { \Statamic\Facades\User::make()->email('admin@example.com')->password('12345678')->name('Admin')->super(true)->save(); echo 'Admin created successfully!'; } else { echo 'Admin already exists'; }" && \
+    ( php artisan tinker --execute="try { if (!\DB::table('users')->where('email', 'admin@example.com')->exists()) { \Statamic\Facades\User::make()->email('admin@example.com')->password('12345678')->name('Admin')->super(true)->save(); echo 'Admin created successfully!'; } else { echo 'Admin already exists'; } } catch (\Throwable \$e) { echo 'Admin seed skipped: ' . \$e->getMessage(); }" || echo "Admin seed step failed, continuing boot anyway" ) && \
     php artisan config:cache && \
     php artisan route:cache && \
     exec apache2-foreground
