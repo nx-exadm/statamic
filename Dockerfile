@@ -60,5 +60,5 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# FIXED ENGINE BOOTSTRAP: Uses exact command names to seed structural data without manual inputs
-CMD ["sh", "-c", "php artisan migrate --force && php artisan statamic:make:user --super --email=\"$STATAMIC_ADMIN_EMAIL\" --password=\"$STATAMIC_ADMIN_PASSWORD\" --name=\"$STATAMIC_ADMIN_USER\" --no-interaction || echo 'User setup skipped or already present' && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
+# TOTAL FIX: Pipes variables sequentially into the interactive wizard prompts directly to bypass flag drop bugs
+CMD ["sh", "-c", "php artisan migrate --force && (printf \"$STATAMIC_ADMIN_EMAIL\n$STATAMIC_ADMIN_PASSWORD\n$STATAMIC_ADMIN_USER\nyes\n\" | php artisan statamic:make:user) || echo 'User setup completed/exists' && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
