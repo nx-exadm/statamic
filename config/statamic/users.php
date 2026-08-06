@@ -29,7 +29,7 @@ return [
 
         'eloquent' => [
             'driver' => 'eloquent',
-            'model' => \Statamic\Eloquent\Users\UserModel::class,
+            'model'  => \Statamic\Eloquent\Users\UserModel::class, // <-- THIS MUST BE HERE
         ],
 
     ],
