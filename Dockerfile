@@ -37,7 +37,7 @@ FROM php:8.3-apache
 
 WORKDIR /var/www/html
 
-# Install system dependencies, PostgreSQL client utilities, and layout engines
+# Install system dependencies, PostgreSQL support, and layout engines
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libzip-dev \
@@ -45,7 +45,6 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
-    postgresql-client \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_pgsql pdo_mysql zip gd \
     && a2enmod rewrite \
@@ -61,11 +60,11 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# DIRECT SQL SYSTEM INJECTION: Bypasses PHP completely to write the admin profile natively over PostgreSQL network layers
+# FAIL-SAFE RUN: Uses low-level DB facade to verify presence and seeds the user via Statamic handlers safely
 CMD php artisan config:clear && \
+    php artisan cache:clear && \
     php artisan migrate --force && \
-    export PGPASSWORD=$DB_PASSWORD && \
-    psql -h $DB_HOST -p ${DB_PORT:-5432} -U $DB_USERNAME -d $DB_DATABASE -c "INSERT INTO users (name, email, password, super, created_at, updated_at) VALUES ('Admin User', 'admin@example.com', '\$2y\$12\$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', true, NOW(), NOW()) ON CONFLICT (email) DO NOTHING;" && \
+    php artisan tinker --execute="if(\DB::table('users')->where('email', 'admin@example.com')->count() === 0) { \Statamic\Facades\User::make()->email('admin@example.com')->password('12345678')->name('Admin')->super(true)->save(); echo 'Admin created successfully!'; } else { echo 'Admin already exists'; }" && \
     php artisan config:cache && \
     php artisan route:cache && \
     exec apache2-foreground
