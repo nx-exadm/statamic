@@ -54,6 +54,9 @@ RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-avail
 # Bring the fully prepared, pre-compiled application package from builder stage
 COPY --from=builder /var/www/html /var/www/html
 
+# Also bring the composer binary itself into the runtime image so diagnostics can use it
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
