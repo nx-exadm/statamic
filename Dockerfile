@@ -57,10 +57,17 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# FAIL-SAFE RUN: won't let a broken admin-seed step take the whole container down
+# DIAGNOSTIC + FAIL-SAFE RUN
 CMD php artisan config:clear && \
     php artisan cache:clear && \
     php artisan migrate --force && \
+    echo "===== PACKAGE VERSIONS =====" && \
+    composer show statamic/cms statamic/eloquent-driver && \
+    echo "===== users.php repository setting =====" && \
+    cat config/statamic/users.php | grep -A2 "'repository'" && \
+    echo "===== users table columns =====" && \
+    php artisan tinker --execute="print_r(\Schema::getColumnListing('users'));" && \
+    echo "=============================" && \
     ( php artisan tinker --execute="try { if (!\DB::table('users')->where('email', 'admin@example.com')->exists()) { \Statamic\Facades\User::make()->email('admin@example.com')->password('12345678')->name('Admin')->super(true)->save(); echo 'Admin created successfully!'; } else { echo 'Admin already exists'; } } catch (\Throwable \$e) { echo 'Admin seed skipped: ' . \$e->getMessage(); }" || echo "Admin seed step failed, continuing boot anyway" ) && \
     php artisan config:cache && \
     php artisan route:cache && \
