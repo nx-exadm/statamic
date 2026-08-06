@@ -22,7 +22,7 @@ RUN composer install --no-dev --no-scripts --prefer-dist
 # Copy the remaining project codebase
 COPY . .
 
-# FIX: Autoloader is now available, so artisan commands will run successfully
+# Run publishing, eliminate the duplicate file, and compile assets together in stage 1
 RUN php artisan vendor:publish --provider="Statamic\Eloquent\ServiceProvider" --force \
     && rm -f database/migrations/*_create_entries_table_with_string_ids.php \
     && npm install \
@@ -60,5 +60,5 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# CLEAN RUN: Executes runtime migrations, updates configurations, and starts Apache instantly
-CMD ["sh", "-c", "php artisan migrate:fresh --force && if [ -n \"$STATAMIC_ADMIN_EMAIL\" ]; then php artisan statamic:user --email=\"$STATAMIC_ADMIN_EMAIL\" --password=\"$STATAMIC_ADMIN_PASSWORD\" --super --name=\"$STATAMIC_ADMIN_USER\" || true; fi && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
+# PRODUCTION SAFE RUN: Uses standard migrate to protect live user content and system data.
+CMD ["sh", "-c", "php artisan migrate --force && if [ -n \"$STATAMIC_ADMIN_EMAIL\" ]; then php artisan statamic:user --email=\"$STATAMIC_ADMIN_EMAIL\" --password=\"$STATAMIC_ADMIN_PASSWORD\" --super --name=\"$STATAMIC_ADMIN_USER\" || true; fi && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
