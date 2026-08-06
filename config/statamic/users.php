@@ -29,8 +29,8 @@ return [
 
         'eloquent' => [
             'driver' => 'eloquent',
-            // FIXED: Using UserModel instead of User for compatibility with your driver version
-            'model' => \Statamic\Eloquent\Users\UserModel::class,
+            // FIXED: Using Statamic's built-in native Eloquent model mapping path
+            'model' => \Statamic\Auth\Eloquent\User::class,
         ],
 
     ],
