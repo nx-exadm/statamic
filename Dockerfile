@@ -3,8 +3,12 @@ FROM php:8.3-fpm-alpine AS builder
 
 WORKDIR /var/www/html
 
-# Install system utilities needed for building packages
-RUN apk add --no-cache git unzip bash
+# Install system utilities and graphic library development packages
+RUN apk add --no-cache git unzip bash freetype-dev libjpeg-turbo-dev libpng-dev
+
+# Compile GD extension inside the builder stage to prevent script discovery failures
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd
 
 # Install Composer securely
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -21,17 +25,22 @@ COPY . .
 # Complete composer optimization dump
 RUN composer dump-autoload --no-dev --optimize
 
+
 # Stage 2: Main Production Web Runtime Engine (Official PHP Apache Image)
 FROM php:8.3-apache
 
 WORKDIR /var/www/html
 
-# Install system dependencies, PostgreSQL support, and rewrite modules
+# Install system dependencies, PostgreSQL support, GD runtime dependencies, and zip
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libzip-dev \
     zip \
-    && docker-php-ext-install pdo_pgsql pdo_mysql zip \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_pgsql pdo_mysql zip gd \
     && a2enmod rewrite \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
