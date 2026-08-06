@@ -60,5 +60,9 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# TOTAL MEMORY FIX: Uses raw tinker PHP code to cleanly seed the database user instantly without memory overhead
-CMD ["sh", "-c", "php artisan migrate --force && php artisan tinker --execute=\"if(\\\\\\\Statamic\\\\\\\Facades\\\\\\\User::findByEmail(env('STATAMIC_ADMIN_EMAIL')) === null) { \\\\\\\\Statamic\\\\\\\\Facades\\\\\\\\User::make()->email(env('STATAMIC_ADMIN_EMAIL'))->password(env('STATAMIC_ADMIN_PASSWORD'))->name(env('STATAMIC_ADMIN_USER'))->super(true)->save(); echo 'Admin user created successfully!'; } else { echo 'Admin already exists'; }\" && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
+# TOTAL SYNTAX FIX: Switched to simple text string CMD format to avoid array parsing bugs entirely
+CMD php artisan migrate --force && \
+    php artisan tinker --execute="if(\Statamic\Facades\User::findByEmail(env('STATAMIC_ADMIN_EMAIL')) === null) { \Statamic\Facades\User::make()->email(env('STATAMIC_ADMIN_EMAIL'))->password(env('STATAMIC_ADMIN_PASSWORD'))->name(env('STATAMIC_ADMIN_USER'))->super(true)->save(); echo 'Admin user created successfully!'; } else { echo 'Admin already exists'; }" && \
+    php artisan config:cache && \
+    php artisan route:cache && \
+    exec apache2-foreground
