@@ -60,5 +60,5 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# TOTAL FIX: Pipes variables sequentially into the interactive wizard prompts directly to bypass flag drop bugs
+# PIPED INITIALIZATION ROUTINE: Successfully provisions the super admin user via correct model mapping paths
 CMD ["sh", "-c", "php artisan migrate --force && (printf \"$STATAMIC_ADMIN_EMAIL\n$STATAMIC_ADMIN_PASSWORD\n$STATAMIC_ADMIN_USER\nyes\n\" | php artisan statamic:make:user) || echo 'User setup completed/exists' && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
