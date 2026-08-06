@@ -13,18 +13,18 @@ php artisan migrate --force
 echo "==> Running fail-safe native seeder..."
 php artisan tinker --execute="
 try {
-    \$userRepository = \Statamic\Facades\User::repository();
-    \$userExists = \$userRepository->findByEmail('admin@example.com');
+    # Natively search for the user through the active Eloquent authentication system
+    \$userExists = \Statamic\Facades\User::findByEmail('admin@example.com');
     
     if (!\$userExists) {
-        \$user = \Statamic\Facades\User::make()
-            ->email('admin@example.com')
-            ->password('12345678')
-            ->name('Admin')
-            ->super(true);
-            
-        \$user->save();
-        echo 'Admin created successfully using Statamic Facades!\n';
+        # Call the core Statamic artisan command safely from inside the container runtime
+        \Illuminate\Support\Facades\Artisan::call('make:user', [
+            '--email' => 'admin@example.com',
+            '--password' => '12345678',
+            '--name' => 'Admin',
+            '--super' => true
+        ]);
+        echo 'Admin created successfully using make:user!\n';
     } else {
         echo 'Admin already exists, skipping.\n';
     }
