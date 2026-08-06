@@ -1,4 +1,6 @@
+# ==============================================================================
 # Stage 1: Build dependencies and compile frontend design assets
+# ==============================================================================
 FROM php:8.3-fpm-alpine AS builder
 WORKDIR /var/www/html
 
@@ -30,11 +32,14 @@ RUN php artisan vendor:publish --provider="Statamic\Eloquent\ServiceProvider" --
 # Complete final composer optimization dump
 RUN composer dump-autoload --no-dev --optimize
 
+
+# ==============================================================================
 # Stage 2: Main Production Web Runtime Engine (Official PHP Apache Image)
+# ==============================================================================
 FROM php:8.3-apache
 WORKDIR /var/www/html
 
-# Install system dependencies, PostgreSQL support, and layout engines
+# Install system dependencies, database drivers, and essential design layout engines
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libzip-dev \
@@ -47,21 +52,25 @@ RUN apt-get update && apt-get install -y \
     && a2enmod rewrite \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Fix Document Root configuration for Laravel/Statamic public directory
+# Fix Document Root configuration for Laravel/Statamic public directory mapping
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!/var/www/html/public!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 # Bring the fully prepared, pre-compiled application package from builder stage
 COPY --from=builder /var/www/html /var/www/html
 
-# Ensure safe permissions for the webserver layout
+# Ensure safe permissions for the Apache webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# FAIL-SAFE RUN: won't let a broken admin-seed step take the whole container down
-CMD php artisan config:clear && \
-    php artisan cache:clear && \
-    php artisan migrate --force && \
-    ( php artisan tinker --execute="try { if (!\DB::table('users')->where('email', 'admin@example.com')->exists()) { \Statamic\Facades\User::make()->email('admin@example.com')->password('12345678')->name('Admin')->super(true)->save(); echo 'Admin created successfully!'; } else { echo 'Admin already exists'; } } catch (\Throwable \$e) { echo 'Admin seed skipped: ' . \$e->getMessage(); }" || echo "Admin seed step failed, continuing boot anyway" ) && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    exec apache2-foreground
+# Copy the entrypoint shell script safely into a system binary location
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+# FORCE CLEAN BREAKS: Fixes potential Windows formatting errors (CRLF) on Render Linux systems
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh
+
+# Apply absolute execution permissions to the script
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Hand over container lifecycle to our unified shell entrypoint script
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["apache2-foreground"]
