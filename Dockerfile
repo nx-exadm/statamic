@@ -1,4 +1,4 @@
-# Stage 1: Build dependencies and compile frontend design assets
+# # Stage 1: Build dependencies and compile frontend design assets
 FROM php:8.3-fpm-alpine AS builder
 
 WORKDIR /var/www/html
@@ -60,8 +60,9 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# FIXED INITIALIZATION: Uses the native Statamic Facade lookup to avoid method crashes on Starter Kits
-CMD php artisan migrate --force && \
+# CACHE-CLEARING INITIALIZATION: Clears any lingering build config states before verifying models
+CMD php artisan config:clear && \
+    php artisan migrate --force && \
     php artisan tinker --execute="if(\Statamic\Facades\User::findByEmail(env('STATAMIC_ADMIN_EMAIL')) === null) { \Statamic\Facades\User::make()->email(env('STATAMIC_ADMIN_EMAIL'))->password(env('STATAMIC_ADMIN_PASSWORD'))->name(env('STATAMIC_ADMIN_USER'))->super(true)->save(); echo 'Admin user created successfully!'; } else { echo 'Admin already exists'; }" && \
     php artisan config:cache && \
     php artisan route:cache && \
