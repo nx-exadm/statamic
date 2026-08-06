@@ -64,8 +64,6 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'statamic',
-            // FIXED: Using Statamic's built-in native Eloquent user path for Starter Kits
-            'model'  => \Statamic\Auth\Eloquent\User::class,
         ],
     ],
 
