@@ -62,19 +62,11 @@ return [
     */
 
     'providers' => [
+        // CRITICAL FIX: Maps Laravel auth to Statamic's driver which now resolves directly to Eloquent
         'users' => [
             'driver' => 'statamic',
+            'model'  => \Statamic\Eloquent\Users\User::class,
         ],
-
-        // 'users' => [
-        //     'driver' => 'eloquent',
-        //     'model' => env('AUTH_MODEL', User::class),
-        // ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
     ],
 
     /*
