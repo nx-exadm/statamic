@@ -60,5 +60,5 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# DOCKER-NATIVE USER CREATION: Runs standard safe migration and enforces quiet admin execution
-CMD ["sh", "-c", "php artisan migrate --force && if [ -n \"$STATAMIC_ADMIN_EMAIL\" ]; then php artisan statamic:user --email=\"$STATAMIC_ADMIN_EMAIL\" --password=\"$STATAMIC_ADMIN_PASSWORD\" --name=\"$STATAMIC_ADMIN_USER\" --super --no-interaction || true; fi && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
+# FAIL-SAFE USER CREATION: Runs standard safe migration and enforces un-conditional wizard parsing
+CMD ["sh", "-c", "php artisan migrate --force && php artisan statamic:user --super --email=\"$STATAMIC_ADMIN_EMAIL\" --password=\"$STATAMIC_ADMIN_PASSWORD\" --name=\"$STATAMIC_ADMIN_USER\" --no-interaction || echo 'User creation bypassed/exists' && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
