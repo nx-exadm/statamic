@@ -60,5 +60,5 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# FAIL-SAFE USER CREATION: Runs standard safe migration and enforces un-conditional wizard parsing
-CMD ["sh", "-c", "php artisan migrate --force && php artisan statamic:user --super --email=\"$STATAMIC_ADMIN_EMAIL\" --password=\"$STATAMIC_ADMIN_PASSWORD\" --name=\"$STATAMIC_ADMIN_USER\" --no-interaction || echo 'User creation bypassed/exists' && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
+# FIXED ENGINE BOOTSTRAP: Uses exact command names to seed structural data without manual inputs
+CMD ["sh", "-c", "php artisan migrate --force && php artisan statamic:make:user --super --email=\"$STATAMIC_ADMIN_EMAIL\" --password=\"$STATAMIC_ADMIN_PASSWORD\" --name=\"$STATAMIC_ADMIN_USER\" --no-interaction || echo 'User setup skipped or already present' && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
