@@ -16,19 +16,19 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy configuration and package manifests first to optimize cache layers
 COPY composer.json composer.lock* package.json package-lock.json* vite.config.js ./
 
-# Install backend dependencies without optimizing autoloader yet (avoids discovery errors)
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+# Install backend dependencies without optimization first
+RUN composer install --no-dev --no-scripts --prefer-dist
 
 # Copy the remaining project codebase
 COPY . .
 
-# CRITICAL FRONTEND FIX: Run publishing, eliminate the duplicate file, and compile assets together in stage 1
+# FIX: Autoloader is now available, so artisan commands will run successfully
 RUN php artisan vendor:publish --provider="Statamic\Eloquent\ServiceProvider" --force \
     && rm -f database/migrations/*_create_entries_table_with_string_ids.php \
     && npm install \
     && npm run build
 
-# Complete composer optimization dump and force package generation
+# Complete final composer optimization dump
 RUN composer dump-autoload --no-dev --optimize
 
 
