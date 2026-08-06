@@ -57,5 +57,5 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# Run build tasks, schema updates, create super admin, and cache configurations sequentially upon initialization
-CMD ["sh", "-c", "php artisan vendor:publish --provider=\"Statamic\\Eloquent\\ServiceProvider\" --force && php artisan migrate --force && if [ -n \"$STATAMIC_ADMIN_EMAIL\" ]; then php artisan statamic:user --email=\"$STATAMIC_ADMIN_EMAIL\" --password=\"$STATAMIC_ADMIN_PASSWORD\" --super --name=\"$STATAMIC_ADMIN_USER\" || true; fi && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
+# DIRECT RUN FIX: Publishes files, deletes the string ID file inside the container, and wipes/recreates the DB.
+CMD ["sh", "-c", "php artisan vendor:publish --provider=\"Statamic\\Eloquent\\ServiceProvider\" --force && rm -f database/migrations/*_create_entries_table_with_string_ids.php && php artisan migrate:fresh --force && if [ -n \"$STATAMIC_ADMIN_EMAIL\" ]; then php artisan statamic:user --email=\"$STATAMIC_ADMIN_EMAIL\" --password=\"$STATAMIC_ADMIN_PASSWORD\" --super --name=\"$STATAMIC_ADMIN_USER\" || true; fi && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
