@@ -29,6 +29,8 @@ return [
 
         'eloquent' => [
             'driver' => 'eloquent',
+            // FIXED: Added the explicit model class wrapper mapping required by the driver
+            'model' => \Statamic\Eloquent\Users\User::class,
         ],
 
     ],
