@@ -29,8 +29,8 @@ return [
 
         'eloquent' => [
             'driver' => 'eloquent',
-            // FIXED: Added the explicit model class wrapper mapping required by the driver
-            'model' => \Statamic\Eloquent\Users\User::class,
+            // FIXED: Using UserModel instead of User for compatibility with your driver version
+            'model' => \Statamic\Eloquent\Users\UserModel::class,
         ],
 
     ],
