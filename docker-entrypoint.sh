@@ -13,17 +13,18 @@ php artisan migrate --force
 echo "==> Running fail-safe native seeder..."
 php artisan tinker --execute="
 try {
-    \$userExists = \DB::table('users')->where('email', 'admin@example.com')->exists();
+    \$userRepository = \Statamic\Facades\User::repository();
+    \$userExists = \$userRepository->findByEmail('admin@example.com');
+    
     if (!\$userExists) {
-        \DB::table('users')->insert([
-            'name' => 'Admin',
-            'email' => 'admin@example.com',
-            'password' => \Hash::make('12345678'),
-            'data' => json_encode(['super' => true]),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        echo 'Admin created successfully!\n';
+        \$user = \Statamic\Facades\User::make()
+            ->email('admin@example.com')
+            ->password('12345678')
+            ->name('Admin')
+            ->super(true);
+            
+        \$user->save();
+        echo 'Admin created successfully using Statamic Facades!\n';
     } else {
         echo 'Admin already exists, skipping.\n';
     }
