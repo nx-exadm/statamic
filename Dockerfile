@@ -22,8 +22,11 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 # Copy the remaining project codebase
 COPY . .
 
-# Run production asset compilation to build CSS and JS files
-RUN npm install && npm run build
+# CRITICAL FRONTEND FIX: Run publishing, eliminate the duplicate file, and compile assets together in stage 1
+RUN php artisan vendor:publish --provider="Statamic\Eloquent\ServiceProvider" --force \
+    && rm -f database/migrations/*_create_entries_table_with_string_ids.php \
+    && npm install \
+    && npm run build
 
 # Complete composer optimization dump and force package generation
 RUN composer dump-autoload --no-dev --optimize
@@ -51,11 +54,11 @@ RUN apt-get update && apt-get install -y \
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!/var/www/html/public!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Bring the compiled vendors, layout styles, and scripts over from Stage 1 workspace
+# Bring the fully prepared, pre-compiled application package from builder stage
 COPY --from=builder /var/www/html /var/www/html
 
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# DIRECT RUN FIX: Publishes files, deletes the string ID file inside the container, and wipes/recreates the DB.
-CMD ["sh", "-c", "php artisan vendor:publish --provider=\"Statamic\\Eloquent\\ServiceProvider\" --force && rm -f database/migrations/*_create_entries_table_with_string_ids.php && php artisan migrate:fresh --force && if [ -n \"$STATAMIC_ADMIN_EMAIL\" ]; then php artisan statamic:user --email=\"$STATAMIC_ADMIN_EMAIL\" --password=\"$STATAMIC_ADMIN_PASSWORD\" --super --name=\"$STATAMIC_ADMIN_USER\" || true; fi && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
+# CLEAN RUN: Executes runtime migrations, updates configurations, and starts Apache instantly
+CMD ["sh", "-c", "php artisan migrate:fresh --force && if [ -n \"$STATAMIC_ADMIN_EMAIL\" ]; then php artisan statamic:user --email=\"$STATAMIC_ADMIN_EMAIL\" --password=\"$STATAMIC_ADMIN_PASSWORD\" --super --name=\"$STATAMIC_ADMIN_USER\" || true; fi && php artisan config:cache && php artisan route:cache && exec apache2-foreground"]
