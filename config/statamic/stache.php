@@ -38,7 +38,26 @@ return [
     */
 
     'stores' => [
-        //
+        'collections' => [
+            'driver' => 'eloquent',
+            'class' => Statamic\Stache\Stores\CollectionsStore::class,
+            'directory' => base_path('content/collections'),
+        ],
+        'entries' => [
+            'driver' => 'eloquent',
+            'class' => Statamic\Stache\Stores\EntriesStore::class,
+            'directory' => base_path('content/collections'),
+        ],
+        'taxonomies' => [
+            'driver' => 'eloquent',
+            'class' => Statamic\Stache\Stores\TaxonomiesStore::class,
+            'directory' => base_path('content/taxonomies'),
+        ],
+        'terms' => [
+            'driver' => 'eloquent',
+            'class' => Statamic\Stache\Stores\TermsStore::class,
+            'directory' => base_path('content/taxonomies'),
+        ],
     ],
 
     /*
