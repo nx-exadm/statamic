@@ -60,7 +60,7 @@ COPY --from=builder /var/www/html /var/www/html
 # Ensure safe permissions for the webserver layout
 RUN chown -R www-data:www-data /var/www/html
 
-# TOTAL SYNTAX FIX: Switched to simple text string CMD format to avoid array parsing bugs entirely
+# FIXED INITIALIZATION: Uses the native Statamic Facade lookup to avoid method crashes on Starter Kits
 CMD php artisan migrate --force && \
     php artisan tinker --execute="if(\Statamic\Facades\User::findByEmail(env('STATAMIC_ADMIN_EMAIL')) === null) { \Statamic\Facades\User::make()->email(env('STATAMIC_ADMIN_EMAIL'))->password(env('STATAMIC_ADMIN_PASSWORD'))->name(env('STATAMIC_ADMIN_USER'))->super(true)->save(); echo 'Admin user created successfully!'; } else { echo 'Admin already exists'; }" && \
     php artisan config:cache && \
