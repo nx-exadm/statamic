@@ -29,8 +29,6 @@ return [
 
         'eloquent' => [
             'driver' => 'eloquent',
-            // FIXED: Using Statamic's built-in native Eloquent model mapping path
-            'model' => \Statamic\Auth\Eloquent\User::class,
         ],
 
     ],
