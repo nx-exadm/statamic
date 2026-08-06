@@ -15,12 +15,14 @@ php artisan tinker --execute="
 try {
     \$userExists = \DB::table('users')->where('email', 'admin@example.com')->exists();
     if (!\$userExists) {
-        \$user = new \App\Models\User();
-        \$user->name = 'Admin';
-        \$user->email = 'admin@example.com';
-        \$user->password = \Hash::make('12345678');
-        \$user->super = true;
-        \$user->save();
+        \DB::table('users')->insert([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'password' => \Hash::make('12345678'),
+            'data' => json_encode(['super' => true]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
         echo 'Admin created successfully!\n';
     } else {
         echo 'Admin already exists, skipping.\n';
